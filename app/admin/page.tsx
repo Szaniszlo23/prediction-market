@@ -13,6 +13,7 @@ type MarketType = "binary" | "categorical" | "multi";
 type AdminPageProps = {
   searchParams?: {
     tab?: string;
+    error?: string;
   };
 };
 
@@ -32,6 +33,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const profile = await requireAdminProfile();
   const activeTab = searchParams?.tab === "requests" ? "requests" : "create";
+  const errorMessage = searchParams?.error ? decodeURIComponent(searchParams.error) : null;
 
   async function createMarket(formData: FormData) {
     "use server";
@@ -89,18 +91,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       redirect("/admin?tab=create");
     }
 
-    type MarketInsert = {
-      title: string;
-      description: string;
-      category: MarketCategory;
-      market_type: MarketType;
-      resolves_at: string | null;
-      liquidity_b: number;
-      status: "open";
-      created_by: string;
-    };
-
-    const insertPayload: MarketInsert = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const insertPayload: Record<string, any> = {
       title,
       description,
       category: safeCategory,
@@ -117,7 +109,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       .select("id")
       .single();
     if (insertMarketError || !insertedMarket) {
-      redirect("/admin?tab=create");
+      const msg = encodeURIComponent(insertMarketError?.message ?? "Unknown error");
+      redirect(`/admin?tab=create&error=${msg}`);
     }
 
     const outcomesToInsert = parsedOutcomes.map((label, sortOrder) => ({
@@ -127,7 +120,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     }));
     const { error: insertOutcomesError } = await supabase.from("outcomes").insert(outcomesToInsert);
     if (insertOutcomesError) {
-      redirect("/admin?tab=create");
+      const msg = encodeURIComponent(insertOutcomesError.message);
+      redirect(`/admin?tab=create&error=${msg}`);
     }
 
     revalidatePath("/admin");
@@ -166,6 +160,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
           {activeTab === "create" ? (
             <div className="space-y-4">
+              {errorMessage && (
+                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                  <strong>Market creation failed:</strong> {errorMessage}
+                </div>
+              )}
               <CreateMarketForm action={createMarket} />
               <Link className="text-sm underline" href={`/admin/markets?admin=${profile.id}`}>
                 View all markets

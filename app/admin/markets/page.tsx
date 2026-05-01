@@ -35,7 +35,6 @@ export default async function AdminMarketsPage() {
   const { data } = await supabase
     .from("markets")
     .select("id, title, market_type, status, created_at")
-    .eq("created_by", profile.id)
     .order("created_at", { ascending: false });
 
   const markets = (data ?? []) as MarketRow[];

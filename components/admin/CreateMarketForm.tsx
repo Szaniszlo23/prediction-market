@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 
 type MarketType = "binary" | "categorical" | "multi";
@@ -72,20 +71,40 @@ export function CreateMarketForm({ action }: CreateMarketFormProps) {
 
       <div className="space-y-3">
         <Label>Market Type</Label>
-        <RadioGroup name="market_type" onValueChange={(value) => setMarketType(value as MarketType)} value={marketType}>
-          <label className="flex items-center gap-2 text-sm">
-            <RadioGroupItem value="binary" />
-            <span>Binary (Yes/No)</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <RadioGroupItem value="categorical" />
-            <span>Categorical (Pick one winner)</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <RadioGroupItem value="multi" />
-            <span>Multi (Several independent yes/no questions)</span>
-          </label>
-        </RadioGroup>
+        <div className="flex flex-col gap-2">
+          {(
+            [
+              { value: "binary", label: "Binary", description: "Yes / No question" },
+              { value: "categorical", label: "Categorical", description: "Pick one winner" },
+              { value: "multi", label: "Multi", description: "Several independent Yes/No questions" },
+            ] as const
+          ).map(({ value, label, description }) => (
+            <button
+              className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
+                marketType === value
+                  ? "border-primary bg-primary/5 text-foreground"
+                  : "border-input text-muted-foreground hover:border-muted-foreground"
+              }`}
+              key={value}
+              onClick={() => setMarketType(value)}
+              type="button"
+            >
+              <span
+                className={`flex size-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                  marketType === value ? "border-primary" : "border-muted-foreground"
+                }`}
+              >
+                {marketType === value && (
+                  <span className="size-2 rounded-full bg-primary" />
+                )}
+              </span>
+              <span>
+                <span className="font-medium text-foreground">{label}</span>
+                <span className="ml-2 text-sm text-muted-foreground">{description}</span>
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {marketType === "binary" ? (
@@ -176,6 +195,8 @@ export function CreateMarketForm({ action }: CreateMarketFormProps) {
         </p>
       </div>
 
+      {/* Hidden inputs — Base UI RadioGroup doesn't submit natively, so we sync state manually */}
+      <input name="market_type" type="hidden" value={marketType} />
       <input name="outcomes_json" type="hidden" value={outcomesJson} />
 
       <div className="flex items-center gap-2">

@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Wallet } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Button, buttonVariants } from "@/components/ui/button";
 
 export async function Navbar() {
   const user = await getCurrentUser();
@@ -17,33 +16,56 @@ export async function Navbar() {
   }
 
   return (
-    <header className="border-b">
-      <nav className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
-        <Link className="text-lg font-semibold" href="/">
-          Prediction Market
+    <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-md">
+      <nav className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 text-gray-900">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-gray-900">
+            <TrendingUp className="size-4 text-white" />
+          </div>
+          <span className="text-base font-semibold tracking-tight">Forecast</span>
         </Link>
 
+        {/* Right side */}
         {user ? (
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Wallet className="size-4" />
-              <span>{profile?.balance ?? 0}</span>
+          <div className="flex items-center gap-2">
+            {/* Balance chip */}
+            <div className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700">
+              <span className="text-xs text-gray-400">$</span>
+              <span>{Number(profile?.balance ?? 0).toFixed(2)}</span>
             </div>
-            <span className="text-sm">{profile?.username ?? user.email}</span>
+
+            {/* Username */}
+            <span className="hidden text-sm text-gray-500 sm:block">
+              {profile?.username ?? user.email?.split("@")[0]}
+            </span>
+
+            {/* Admin */}
             {profile?.is_admin ? (
-              <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin">
+              <Link
+                href="/admin"
+                className="rounded-full border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50"
+              >
                 Admin
               </Link>
             ) : null}
+
+            {/* Sign out */}
             <form action={logout}>
-              <Button size="sm" variant="outline" type="submit">
-                Logout
-              </Button>
+              <button
+                type="submit"
+                className="rounded-full px-3 py-1.5 text-sm text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              >
+                Log out
+              </button>
             </form>
           </div>
         ) : (
-          <Link className={buttonVariants({ size: "sm" })} href="/login">
-            Sign in
+          <Link
+            href="/login"
+            className="rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+          >
+            Log in
           </Link>
         )}
       </nav>
