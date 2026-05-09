@@ -91,7 +91,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       redirect("/admin?tab=create");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const insertPayload: Record<string, any> = {
       title,
       description,
