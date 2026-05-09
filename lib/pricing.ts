@@ -65,3 +65,34 @@ export function applyFee(grossCost: number): { gross: number; fee: number; total
   const fee = Math.abs(grossCost) * TRANSACTION_FEE_RATE;
   return { gross: grossCost, fee, total: grossCost + fee };
 }
+
+/** Gross proceeds from selling `shares` of `side` in a binary/multi market (positive = money back). */
+export function sellProceedsBinary(
+  qYes: number,
+  qNo: number,
+  b: number,
+  side: "yes" | "no",
+  shares: number,
+): number {
+  const nextQYes = side === "yes" ? qYes - shares : qYes;
+  const nextQNo  = side === "no"  ? qNo  - shares : qNo;
+  return lmsrCostBinary(qYes, qNo, b) - lmsrCostBinary(nextQYes, nextQNo, b);
+}
+
+/** Gross proceeds from selling `shares` of outcome[outcomeIndex] in a categorical market. */
+export function sellProceedsCategorical(
+  quantities: number[],
+  b: number,
+  outcomeIndex: number,
+  shares: number,
+): number {
+  const newQ = [...quantities];
+  newQ[outcomeIndex] -= shares;
+  return lmsrCostCategorical(quantities, b) - lmsrCostCategorical(newQ, b);
+}
+
+/** Returns { gross, fee, net } for a sell — net is what user receives after fee. */
+export function applySellFee(grossProceeds: number): { gross: number; fee: number; net: number } {
+  const fee = Math.abs(grossProceeds) * TRANSACTION_FEE_RATE;
+  return { gross: grossProceeds, fee, net: grossProceeds - fee };
+}

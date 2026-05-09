@@ -119,7 +119,7 @@ export default function SignUpPage() {
           <p className="mt-4 text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link className="underline" href="/login">
-              Sign in
+              Log in
             </Link>
             .
           </p>

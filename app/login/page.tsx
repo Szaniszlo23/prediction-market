@@ -119,7 +119,7 @@ export default function LoginPage() {
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] w-full max-w-md items-center px-4">
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Sign in</CardTitle>
+          <CardTitle>Log in</CardTitle>
           <CardDescription>Use your email and password to access your account.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -148,7 +148,7 @@ export default function LoginPage() {
             ) : null}
             <div className="flex gap-2">
               <Button disabled={loading} type="submit">
-                Sign in
+                Log in
               </Button>
               <Button disabled={loading} onClick={handleSignUp} type="button" variant="outline">
                 Sign up

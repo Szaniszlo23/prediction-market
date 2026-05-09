@@ -35,10 +35,29 @@ export async function Navbar() {
               <span>{Number(profile?.balance ?? 0).toFixed(2)}</span>
             </div>
 
-            {/* Username */}
-            <span className="hidden text-sm text-gray-500 sm:block">
+            {/* Portfolio */}
+            <Link
+              href="/portfolio"
+              className="hidden rounded-full border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 sm:block"
+            >
+              Portfolio
+            </Link>
+
+            {/* Leaderboard */}
+            <Link
+              href="/leaderboard"
+              className="hidden rounded-full border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 sm:block"
+            >
+              🏆 Leaderboard
+            </Link>
+
+            {/* Username → Settings */}
+            <Link
+              href="/settings"
+              className="hidden text-sm text-gray-500 transition-colors hover:text-gray-800 sm:block"
+            >
               {profile?.username ?? user.email?.split("@")[0]}
-            </span>
+            </Link>
 
             {/* Admin */}
             {profile?.is_admin ? (

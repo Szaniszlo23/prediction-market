@@ -5,6 +5,8 @@ import {
   OutcomeMiniChart,
 } from "@/components/markets/PriceCharts";
 import { TradeDialog } from "@/components/markets/TradeDialog";
+import { SellDialog } from "@/components/markets/SellDialog";
+import { CommentsSection } from "@/components/markets/CommentsSection";
 import { getCurrentUser } from "@/lib/auth";
 import { lmsrPriceBinary, lmsrPriceCategorical } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
@@ -163,6 +165,27 @@ export default async function MarketDetailPage({ params }: MarketDetailPageProps
   return (
     <main className="mx-auto w-full max-w-4xl px-6 py-8 space-y-5">
 
+      {/* ── Resolved banner ── */}
+      {market.status === "resolved" && (() => {
+        const winner = outcomes.find((o) => o.resolution === "yes");
+        const invalid = outcomes.every((o) => o.resolution === "invalid");
+        return (
+          <div className={`rounded-2xl px-5 py-4 flex items-center gap-3 ${invalid ? "bg-amber-50 border border-amber-100" : "bg-green-50 border border-green-100"}`}>
+            <div className={`flex size-9 shrink-0 items-center justify-center rounded-full text-lg ${invalid ? "bg-amber-100" : "bg-green-100"}`}>
+              {invalid ? "⚠️" : "🏆"}
+            </div>
+            <div>
+              <p className={`font-bold ${invalid ? "text-amber-800" : "text-green-800"}`}>
+                {invalid ? "Market resolved as Invalid" : winner ? `"${winner.label}" won!` : "Market resolved"}
+              </p>
+              <p className={`text-xs ${invalid ? "text-amber-600" : "text-green-600"}`}>
+                {invalid ? "All traders have been refunded." : "Winning shareholders have been paid out $1 per share."}
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Market header ── */}
       <div className="rounded-2xl border border-gray-100 bg-white p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -195,11 +218,17 @@ export default async function MarketDetailPage({ params }: MarketDetailPageProps
         <div className="rounded-2xl border border-gray-100 bg-white p-6 space-y-5">
           {/* Prices */}
           <div className="flex items-center gap-4">
-            <div className="flex-1 rounded-xl bg-green-50 p-4 text-center">
+            <div className={`flex-1 rounded-xl p-4 text-center relative ${binaryOutcome.resolution === "yes" ? "bg-green-100 ring-2 ring-green-400" : "bg-green-50"}`}>
+              {binaryOutcome.resolution === "yes" && (
+                <span className="absolute right-2 top-2 text-sm">🏆</span>
+              )}
               <p className="text-3xl font-bold text-green-600">{pct(binaryOutcome.yesPrice)}</p>
               <p className="mt-0.5 text-xs font-medium text-green-500 uppercase tracking-wide">Yes</p>
             </div>
-            <div className="flex-1 rounded-xl bg-red-50 p-4 text-center">
+            <div className={`flex-1 rounded-xl p-4 text-center relative ${binaryOutcome.resolution === "no" ? "bg-red-100 ring-2 ring-red-400" : "bg-red-50"}`}>
+              {binaryOutcome.resolution === "no" && (
+                <span className="absolute right-2 top-2 text-sm">🏆</span>
+              )}
               <p className="text-3xl font-bold text-red-500">{pct(binaryOutcome.noPrice)}</p>
               <p className="mt-0.5 text-xs font-medium text-red-400 uppercase tracking-wide">No</p>
             </div>
@@ -219,18 +248,34 @@ export default async function MarketDetailPage({ params }: MarketDetailPageProps
             <TradeDialog allOutcomes={outcomes} market={marketInfo} outcome={binaryOutcome} defaultSide="no" currentPrice={binaryOutcome.noPrice} />
           </div>
 
-          {/* Position */}
+          {/* Position + Sell */}
           {currentUser && (() => {
             const pos = positionMap.get(binaryOutcome.id);
             const yes = Number(pos?.yes_shares ?? 0);
             const no = Number(pos?.no_shares ?? 0);
             if (!pos || (yes === 0 && no === 0)) return null;
             return (
-              <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
-                <span className="text-gray-500">Your position — </span>
-                <span className="font-semibold text-green-600">{yes} YES</span>
-                <span className="mx-2 text-gray-300">·</span>
-                <span className="font-semibold text-red-500">{no} NO</span>
+              <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Your Position</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {yes > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-green-600">{yes} YES</span>
+                      {market.status === "open" && !binaryOutcome.resolution && (
+                        <SellDialog outcome={binaryOutcome} market={marketInfo} allOutcomes={outcomes} side="yes" sharesHeld={yes} />
+                      )}
+                    </div>
+                  )}
+                  {yes > 0 && no > 0 && <span className="text-gray-300">·</span>}
+                  {no > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-red-500">{no} NO</span>
+                      {market.status === "open" && !binaryOutcome.resolution && (
+                        <SellDialog outcome={binaryOutcome} market={marketInfo} allOutcomes={outcomes} side="no" sharesHeld={no} />
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })()}
@@ -276,10 +321,21 @@ export default async function MarketDetailPage({ params }: MarketDetailPageProps
               return (
                 <div
                   key={outcome.id}
-                  className="flex items-center gap-3 rounded-xl border border-gray-100 p-4 hover:bg-gray-50 transition-colors"
+                  className={`flex items-center gap-3 rounded-xl border p-4 transition-colors ${
+                    outcome.resolution === "yes"
+                      ? "border-green-200 bg-green-50"
+                      : outcome.resolution === "no"
+                      ? "border-gray-100 bg-gray-50 opacity-60"
+                      : "border-gray-100 hover:bg-gray-50"
+                  }`}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{outcome.label}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-900 truncate">{outcome.label}</p>
+                      {outcome.resolution === "yes" && (
+                        <span className="rounded-full bg-green-200 px-2 py-0.5 text-xs font-bold text-green-800">🏆 Winner</span>
+                      )}
+                    </div>
                     <div className="mt-0.5 flex items-center gap-2">
                       <span className="text-sm font-bold text-gray-800">{pct(outcome.yesPrice)}</span>
                       {delta !== 0 && (
@@ -288,11 +344,17 @@ export default async function MarketDetailPage({ params }: MarketDetailPageProps
                         </span>
                       )}
                     </div>
-                    {currentUser && positionMap.has(outcome.id) && (
-                      <p className="mt-0.5 text-xs text-gray-400">
-                        {Number(positionMap.get(outcome.id)?.yes_shares ?? 0)} shares held
-                      </p>
-                    )}
+                    {currentUser && positionMap.has(outcome.id) && (() => {
+                      const yesHeld = Number(positionMap.get(outcome.id)?.yes_shares ?? 0);
+                      return yesHeld > 0 ? (
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-xs text-gray-400">{yesHeld} shares held</span>
+                          {market.status === "open" && !outcome.resolution && (
+                            <SellDialog outcome={outcome} market={marketInfo} allOutcomes={outcomes} side="yes" sharesHeld={yesHeld} />
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                   {/* Bar */}
                   <div className="hidden sm:block w-24">
@@ -328,13 +390,25 @@ export default async function MarketDetailPage({ params }: MarketDetailPageProps
             const pos = positionMap.get(outcome.id);
 
             return (
-              <div key={outcome.id} className="rounded-2xl border border-gray-100 bg-white p-5 space-y-3">
+              <div key={outcome.id} className={`rounded-2xl border p-5 space-y-3 ${
+                outcome.resolution === "yes"
+                  ? "border-green-200 bg-green-50"
+                  : outcome.resolution === "no"
+                  ? "border-gray-100 bg-gray-50"
+                  : "border-gray-100 bg-white"
+              }`}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-gray-900">{outcome.label}</p>
                     {outcome.resolution && (
-                      <span className="mt-1 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600">
-                        {outcome.resolution}
+                      <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                        outcome.resolution === "yes"
+                          ? "bg-green-200 text-green-800"
+                          : outcome.resolution === "no"
+                          ? "bg-red-50 text-red-600"
+                          : "bg-amber-50 text-amber-700"
+                      }`}>
+                        {outcome.resolution === "yes" ? "🏆 YES — Resolved" : outcome.resolution === "no" ? "✗ NO — Resolved" : "⚠️ Invalid"}
                       </span>
                     )}
                   </div>
@@ -355,11 +429,27 @@ export default async function MarketDetailPage({ params }: MarketDetailPageProps
                 </div>
 
                 {currentUser && pos && (Number(pos.yes_shares) > 0 || Number(pos.no_shares) > 0) && (
-                  <p className="text-xs text-gray-400">
-                    Position: <span className="font-medium text-green-600">{Number(pos.yes_shares)} YES</span>
-                    {" · "}
-                    <span className="font-medium text-red-500">{Number(pos.no_shares)} NO</span>
-                  </p>
+                  <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+                    <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-gray-400">Your Position</p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {Number(pos.yes_shares) > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-green-600">{Number(pos.yes_shares)} YES</span>
+                          {market.status === "open" && !outcome.resolution && (
+                            <SellDialog outcome={outcome} market={marketInfo} allOutcomes={outcomes} side="yes" sharesHeld={Number(pos.yes_shares)} />
+                          )}
+                        </div>
+                      )}
+                      {Number(pos.no_shares) > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-red-500">{Number(pos.no_shares)} NO</span>
+                          {market.status === "open" && !outcome.resolution && (
+                            <SellDialog outcome={outcome} market={marketInfo} allOutcomes={outcomes} side="no" sharesHeld={Number(pos.no_shares)} />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
 
                 {outcomeChartData.length > 0 && (
@@ -377,6 +467,9 @@ export default async function MarketDetailPage({ params }: MarketDetailPageProps
           })}
         </div>
       ) : null}
+
+      {/* ── Comments ── */}
+      <CommentsSection marketId={market.id} currentUserId={currentUser?.id ?? null} />
 
       {/* ── Recent Trades ── */}
       <div className="rounded-2xl border border-gray-100 bg-white p-6">
