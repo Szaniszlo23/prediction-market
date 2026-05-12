@@ -1,14 +1,6 @@
-# PredictIt — A Real-Money-Style Prediction Market
+# QFin Polymarket
 
 A fully functional prediction market platform where users trade on the outcomes of real-world events. Built with **Next.js 14**, **Supabase**, and deployed on **Vercel**.
-
----
-
-## What Is a Prediction Market?
-
-A prediction market lets people put their money where their mouth is. Instead of just saying "I think X will happen," you buy shares in that outcome. If you are right, you profit. If you are wrong, you lose what you paid.
-
-Prices in a prediction market are probabilities. A YES share trading at **$0.70** means the market collectively believes there is a **70% chance** that outcome happens. Prices move in real time as people buy and sell, making them powerful tools for forecasting.
 
 ---
 
