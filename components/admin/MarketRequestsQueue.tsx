@@ -41,12 +41,33 @@ export function MarketRequestsQueue({
 
   async function load() {
     const supabase = createClient();
-    const { data, error } = await supabase
+
+    // Fetch requests
+    const { data: reqData, error } = await supabase
       .from("market_requests")
-      .select("id, title, description, category, status, created_at, user_id, profiles(username)")
+      .select("id, title, description, category, status, created_at, user_id")
       .order("created_at", { ascending: false });
     if (error) { toast.error(error.message); return; }
-    setRequests((data ?? []) as unknown as MarketRequest[]);
+
+    // Fetch usernames separately to avoid FK relationship issues
+    const userIds = Array.from(new Set((reqData ?? []).map((r) => r.user_id as string)));
+    let usernameMap: Record<string, string | null> = {};
+    if (userIds.length > 0) {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .in("id", userIds);
+      usernameMap = Object.fromEntries(
+        (profileData ?? []).map((p) => [p.id, p.username])
+      );
+    }
+
+    const merged = (reqData ?? []).map((r) => ({
+      ...r,
+      profiles: { username: usernameMap[r.user_id] ?? null },
+    }));
+
+    setRequests(merged as unknown as MarketRequest[]);
     setLoading(false);
   }
 
