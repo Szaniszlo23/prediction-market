@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { CreateMarketForm } from "@/components/admin/CreateMarketForm";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type MarketCategory = "Sports" | "Politics" | "Crypto" | "Academic" | "Other";
@@ -19,17 +18,12 @@ type AdminPageProps = {
 
 async function requireAdminProfile() {
   const profile = await getCurrentProfile();
-  if (!profile?.is_admin) {
-    redirect("/");
-  }
-
+  if (!profile?.is_admin) redirect("/");
   return profile;
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
-  if (!isSupabaseConfigured()) {
-    redirect("/");
-  }
+  if (!isSupabaseConfigured()) redirect("/");
 
   const profile = await requireAdminProfile();
   const activeTab = searchParams?.tab === "requests" ? "requests" : "create";
@@ -53,13 +47,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       redirect("/admin?tab=create");
     }
 
-    const allowedCategories = new Set<MarketCategory>([
-      "Sports",
-      "Politics",
-      "Crypto",
-      "Academic",
-      "Other",
-    ]);
+    const allowedCategories = new Set<MarketCategory>(["Sports", "Politics", "Crypto", "Academic", "Other"]);
     const allowedTypes = new Set<MarketType>(["binary", "categorical", "multi"]);
     const safeCategory: MarketCategory = allowedCategories.has(category) ? category : "Other";
     const safeType: MarketType = allowedTypes.has(marketType) ? marketType : "binary";
@@ -72,41 +60,35 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     try {
       const raw = JSON.parse(outcomesJson) as unknown;
       if (Array.isArray(raw)) {
-        parsedOutcomes = raw
-          .map((value) => String(value).trim())
-          .filter((value) => value.length > 0);
+        parsedOutcomes = raw.map((v) => String(v).trim()).filter((v) => v.length > 0);
       }
     } catch {
       parsedOutcomes = [];
     }
 
     if (safeType === "binary") {
-      const fallback = title || "Outcome";
-      parsedOutcomes = [parsedOutcomes[0] || fallback];
+      parsedOutcomes = [parsedOutcomes[0] || title];
     } else if (safeType === "categorical") {
-      if (parsedOutcomes.length < 2 || parsedOutcomes.length > 10) {
-        redirect("/admin?tab=create");
-      }
+      if (parsedOutcomes.length < 2 || parsedOutcomes.length > 10) redirect("/admin?tab=create");
     } else if (parsedOutcomes.length < 1 || parsedOutcomes.length > 20) {
       redirect("/admin?tab=create");
     }
 
-    const insertPayload: Record<string, any> = {
-      title,
-      description,
-      category: safeCategory,
-      market_type: safeType,
-      resolves_at: resolvesAt,
-      liquidity_b: liquidityInput,
-      status: "open",
-      created_by: adminProfile.id,
-    };
-
     const { data: insertedMarket, error: insertMarketError } = await supabase
       .from("markets")
-      .insert(insertPayload)
+      .insert({
+        title,
+        description,
+        category: safeCategory,
+        market_type: safeType,
+        resolves_at: resolvesAt,
+        liquidity_b: liquidityInput,
+        status: "open",
+        created_by: adminProfile.id,
+      })
       .select("id")
       .single();
+
     if (insertMarketError || !insertedMarket) {
       const msg = encodeURIComponent(insertMarketError?.message ?? "Unknown error");
       redirect(`/admin?tab=create&error=${msg}`);
@@ -117,6 +99,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       label,
       sort_order: sortOrder,
     }));
+
     const { error: insertOutcomesError } = await supabase.from("outcomes").insert(outcomesToInsert);
     if (insertOutcomesError) {
       const msg = encodeURIComponent(insertOutcomesError.message);
@@ -135,43 +118,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <CardTitle>Admin</CardTitle>
           <CardDescription>Manage markets and moderation tools.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-2 border-b pb-2">
-            <Link
-              className={`rounded-md px-3 py-1 text-sm ${
-                activeTab === "create" ? "bg-muted font-medium text-foreground" : "text-muted-foreground"
-              }`}
-              href="/admin?tab=create"
-            >
-              Create Market
-            </Link>
-            <Link
-              className={`rounded-md px-3 py-1 text-sm ${
-                activeTab === "requests"
-                  ? "bg-muted font-medium text-foreground"
-                  : "text-muted-foreground"
-              }`}
-              href="/admin?tab=requests"
-            >
-              Event Requests
-            </Link>
-          </div>
-
-          {activeTab === "create" ? (
-            <div className="space-y-4">
-              {errorMessage && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                  <strong>Market creation failed:</strong> {errorMessage}
-                </div>
-              )}
-              <CreateMarketForm action={createMarket} />
-              <Link className="text-sm underline" href={`/admin/markets?admin=${profile.id}`}>
-                View all markets
-              </Link>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Coming soon.</p>
-          )}
+        <CardContent>
+          <AdminTabs
+            createMarket={createMarket}
+            adminId={profile.id}
+            initialTab={activeTab}
+            errorMessage={errorMessage}
+          />
         </CardContent>
       </Card>
     </main>

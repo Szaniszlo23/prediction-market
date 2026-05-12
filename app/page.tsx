@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { lmsrPriceBinary, lmsrPriceCategorical } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { RequestMarketDialog } from "@/components/markets/RequestMarketDialog";
 
 type OutcomeRow = {
   id: string;
@@ -66,6 +68,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export default async function HomePage() {
   const supabase = createClient();
+  const user = await getCurrentUser();
   const { data } = await supabase
     .from("markets")
     .select("id, title, category, market_type, liquidity_b, status, outcomes(id, label, q_yes, q_no)")
@@ -77,9 +80,12 @@ export default async function HomePage() {
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-8">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Markets</h1>
-        <p className="mt-1 text-sm text-gray-500">Predict the future. Trade on outcomes.</p>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Markets</h1>
+          <p className="mt-1 text-sm text-gray-500">Predict the future. Trade on outcomes.</p>
+        </div>
+        {user && <RequestMarketDialog />}
       </div>
 
       {markets.length === 0 ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -11,15 +11,26 @@ type MarketType = "binary" | "categorical" | "multi";
 
 type CreateMarketFormProps = {
   action: (formData: FormData) => void;
+  prefillTitle?: string;
+  prefillDescription?: string;
+  prefillCategory?: string;
 };
 
-export function CreateMarketForm({ action }: CreateMarketFormProps) {
-  const [title, setTitle] = useState("");
+export function CreateMarketForm({ action, prefillTitle = "", prefillDescription = "", prefillCategory = "" }: CreateMarketFormProps) {
+  const [title, setTitle] = useState(prefillTitle);
   const [marketType, setMarketType] = useState<MarketType>("binary");
-  const [binaryQuestion, setBinaryQuestion] = useState("");
+  const [binaryQuestion, setBinaryQuestion] = useState(prefillTitle);
   const [binaryQuestionTouched, setBinaryQuestionTouched] = useState(false);
   const [categoricalOutcomes, setCategoricalOutcomes] = useState(["", ""]);
   const [multiOutcomes, setMultiOutcomes] = useState([""]);
+
+  // Sync when prefill changes (admin approves a request)
+  useEffect(() => {
+    if (prefillTitle) {
+      setTitle(prefillTitle);
+      if (!binaryQuestionTouched) setBinaryQuestion(prefillTitle);
+    }
+  }, [prefillTitle]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function onTitleChange(nextTitle: string) {
     setTitle(nextTitle);
@@ -50,14 +61,14 @@ export function CreateMarketForm({ action }: CreateMarketFormProps) {
 
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
-        <Textarea id="description" name="description" />
+        <Textarea id="description" name="description" defaultValue={prefillDescription} />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="category">Category</Label>
         <select
           className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
-          defaultValue="Sports"
+          defaultValue={prefillCategory || "Sports"}
           id="category"
           name="category"
         >
