@@ -2,7 +2,7 @@
 
 A fully functional prediction market platform where users trade on the outcomes of real-world events. Built with **Next.js 14**, **Supabase**, and deployed on **Vercel**.
 
----
+--
 
 ## Features
 
