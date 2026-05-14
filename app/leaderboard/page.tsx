@@ -83,15 +83,16 @@ export default async function LeaderboardPage() {
 
       {/* Top 3 podium */}
       {rows.length >= 3 && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3 items-end">
           {[rows[1], rows[0], rows[2]].map((row, i) => {
             const rank = i === 0 ? 2 : i === 1 ? 1 : 3;
             const medal = MEDALS[rank - 1];
-            const heights = ["h-24", "h-32", "h-20"];
+            // Step effect via top padding — content always fully visible
+            const topPadding = ["pt-8", "pt-2", "pt-12"];
             return (
               <div
                 key={row.id}
-                className={`flex flex-col items-center justify-end rounded-2xl border p-4 text-center transition-all ${
+                className={`flex flex-col items-center rounded-2xl border p-4 text-center transition-all ${topPadding[i]} ${
                   row.isCurrentUser
                     ? "border-gray-900 bg-gray-900 text-white"
                     : rank === 1
@@ -99,13 +100,13 @@ export default async function LeaderboardPage() {
                     : rank === 2
                     ? "border-gray-200 bg-gray-50"
                     : "border-orange-100 bg-orange-50"
-                } ${heights[i]}`}
+                }`}
               >
-                <p className="text-2xl">{medal}</p>
-                <p className={`mt-1 text-sm font-bold truncate w-full ${row.isCurrentUser ? "text-white" : "text-gray-900"}`}>
+                <p className="text-3xl">{medal}</p>
+                <p className={`mt-1.5 text-sm font-bold truncate w-full ${row.isCurrentUser ? "text-white" : "text-gray-900"}`}>
                   {row.username}
                 </p>
-                <p className={`text-xs font-semibold ${row.isCurrentUser ? "text-gray-300" : "text-gray-500"}`}>
+                <p className={`text-xs font-semibold mt-0.5 ${row.isCurrentUser ? "text-gray-300" : "text-gray-500"}`}>
                   {fmt(row.balance)}
                 </p>
               </div>
