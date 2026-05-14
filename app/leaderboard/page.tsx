@@ -21,15 +21,6 @@ function fmtCompact(v: number) {
   return `$${v.toFixed(0)}`;
 }
 
-function avatarColor(username: string) {
-  const colors = [
-    "bg-violet-500", "bg-blue-500", "bg-cyan-500", "bg-teal-500",
-    "bg-emerald-500", "bg-amber-500", "bg-orange-500", "bg-rose-500",
-  ];
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-}
 
 export default async function LeaderboardPage() {
   if (!isSupabaseConfigured()) redirect("/");
@@ -110,26 +101,17 @@ export default async function LeaderboardPage() {
             return (
               <div key={row.id} className="flex flex-col items-center gap-0 flex-1 max-w-[180px]">
                 {/* Card */}
-                <div className={`w-full rounded-2xl border-2 p-4 text-center space-y-2 shadow-sm ${
+                <div className={`w-full rounded-2xl border-2 p-4 text-center space-y-1.5 shadow-sm ${
                   isYou ? "border-gray-900 bg-gray-900" : s.card
                 }`}>
-                  {/* Avatar */}
-                  <div className={`mx-auto flex size-12 items-center justify-center rounded-full text-lg font-black text-white ${
-                    isYou ? "bg-white/20" : avatarColor(row.username)
-                  }`}>
-                    {row.username.charAt(0).toUpperCase()}
-                  </div>
-
                   {/* Name */}
-                  <div>
-                    <p className={`text-sm font-bold truncate ${isYou ? "text-white" : s.nameColor}`}>
-                      {row.username}
-                      {isYou && <span className="ml-1.5 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold text-white align-middle">you</span>}
-                    </p>
-                    <p className={`text-xs font-semibold mt-0.5 ${isYou ? "text-gray-300" : s.balColor}`}>
-                      {fmt(row.balance)}
-                    </p>
-                  </div>
+                  <p className={`text-sm font-bold truncate ${isYou ? "text-white" : s.nameColor}`}>
+                    {row.username}
+                    {isYou && <span className="ml-1.5 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold text-white align-middle">you</span>}
+                  </p>
+                  <p className={`text-xs font-semibold ${isYou ? "text-gray-300" : s.balColor}`}>
+                    {fmt(row.balance)}
+                  </p>
 
                   {/* P&L */}
                   <div className={`text-xs font-bold ${
@@ -198,12 +180,7 @@ export default async function LeaderboardPage() {
 
                   {/* Trader */}
                   <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`shrink-0 flex size-7 items-center justify-center rounded-full text-xs font-black text-white ${
-                        row.isCurrentUser ? "bg-white/20" : avatarColor(row.username)
-                      }`}>
-                        {row.username.charAt(0).toUpperCase()}
-                      </div>
+                    <div className="flex items-center gap-2">
                       <span className={`font-semibold ${row.isCurrentUser ? "text-white" : "text-gray-900"}`}>
                         {row.username}
                       </span>
