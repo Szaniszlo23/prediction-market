@@ -159,90 +159,99 @@ export default async function LeaderboardPage() {
 
       {/* Full table */}
       <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm">
-        {/* Table header */}
-        <div className="grid grid-cols-[2rem_1fr_auto_auto_auto_auto] gap-x-4 px-5 py-3 border-b border-gray-100 text-xs font-semibold uppercase tracking-wider text-gray-400">
-          <span>#</span>
-          <span>Trader</span>
-          <span className="text-right">Balance</span>
-          <span className="text-right hidden sm:block">P&amp;L</span>
-          <span className="text-right hidden sm:block">Trades</span>
-          <span className="text-right hidden md:block">Volume</span>
-        </div>
+        <table className="w-full text-sm border-collapse">
+          <colgroup>
+            <col className="w-12" />
+            <col />
+            <col className="w-28" />
+            <col className="w-32" />
+            <col className="w-16" />
+            <col className="w-20" />
+          </colgroup>
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">#</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Trader</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">Balance</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400 hidden sm:table-cell">P&amp;L</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400 hidden sm:table-cell">Trades</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400 hidden md:table-cell">Volume</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {rows.map((row, index) => {
+              const rank = index + 1;
+              const rankDisplay = rank <= 3 ? ["🥇", "🥈", "🥉"][rank - 1] : `${rank}`;
+              const isTop3 = rank <= 3;
 
-        <div className="divide-y divide-gray-50">
-          {rows.map((row, index) => {
-            const rank = index + 1;
-            const rankDisplay = rank <= 3
-              ? ["🥇", "🥈", "🥉"][rank - 1]
-              : `${rank}`;
-
-            return (
-              <div
-                key={row.id}
-                className={`grid grid-cols-[2rem_1fr_auto_auto_auto_auto] gap-x-4 items-center px-5 py-3.5 transition-colors ${
-                  row.isCurrentUser
-                    ? "bg-gray-900 text-white"
-                    : "hover:bg-gray-50"
-                }`}
-              >
-                {/* Rank */}
-                <span className={`text-sm font-bold text-center ${
-                  rank <= 3 ? "text-base" : row.isCurrentUser ? "text-gray-400" : "text-gray-300"
-                }`}>
-                  {rankDisplay}
-                </span>
-
-                {/* Trader */}
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={`shrink-0 flex size-7 items-center justify-center rounded-full text-xs font-black text-white ${
-                    row.isCurrentUser ? "bg-white/20" : avatarColor(row.username)
-                  }`}>
-                    {row.username.charAt(0).toUpperCase()}
-                  </div>
-                  <span className={`font-semibold truncate ${row.isCurrentUser ? "text-white" : "text-gray-900"}`}>
-                    {row.username}
-                  </span>
-                  {row.isCurrentUser && (
-                    <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold text-white">
-                      you
+              return (
+                <tr
+                  key={row.id}
+                  className={`transition-colors ${row.isCurrentUser ? "bg-gray-900" : "hover:bg-gray-50"}`}
+                >
+                  {/* Rank */}
+                  <td className="px-4 py-3.5 text-center">
+                    <span className={isTop3 ? "text-base" : `text-xs font-semibold ${row.isCurrentUser ? "text-gray-500" : "text-gray-300"}`}>
+                      {rankDisplay}
                     </span>
-                  )}
-                </div>
+                  </td>
 
-                {/* Balance */}
-                <span className={`text-right font-bold tabular-nums ${row.isCurrentUser ? "text-white" : "text-gray-900"}`}>
-                  {fmt(row.balance)}
-                </span>
+                  {/* Trader */}
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`shrink-0 flex size-7 items-center justify-center rounded-full text-xs font-black text-white ${
+                        row.isCurrentUser ? "bg-white/20" : avatarColor(row.username)
+                      }`}>
+                        {row.username.charAt(0).toUpperCase()}
+                      </div>
+                      <span className={`font-semibold ${row.isCurrentUser ? "text-white" : "text-gray-900"}`}>
+                        {row.username}
+                      </span>
+                      {row.isCurrentUser && (
+                        <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold text-white">
+                          you
+                        </span>
+                      )}
+                    </div>
+                  </td>
 
-                {/* P&L */}
-                <div className={`hidden sm:flex items-center justify-end gap-1 font-semibold tabular-nums ${
-                  row.profit > 0
-                    ? row.isCurrentUser ? "text-green-400" : "text-green-600"
-                    : row.profit < 0
-                    ? row.isCurrentUser ? "text-red-400" : "text-red-500"
-                    : row.isCurrentUser ? "text-gray-500" : "text-gray-400"
-                }`}>
-                  {row.profit > 0
-                    ? <TrendingUp className="size-3.5" />
-                    : row.profit < 0
-                    ? <TrendingDown className="size-3.5" />
-                    : <Minus className="size-3.5" />}
-                  {row.profit >= 0 ? "+" : ""}{fmt(row.profit)}
-                </div>
+                  {/* Balance */}
+                  <td className={`px-4 py-3.5 text-right font-bold tabular-nums ${row.isCurrentUser ? "text-white" : "text-gray-900"}`}>
+                    {fmt(row.balance)}
+                  </td>
 
-                {/* Trades */}
-                <span className={`hidden sm:block text-right tabular-nums ${row.isCurrentUser ? "text-gray-300" : "text-gray-500"}`}>
-                  {row.tradeCount}
-                </span>
+                  {/* P&L */}
+                  <td className={`px-4 py-3.5 text-right hidden sm:table-cell`}>
+                    <div className={`flex items-center justify-end gap-1 font-semibold tabular-nums ${
+                      row.profit > 0
+                        ? row.isCurrentUser ? "text-green-400" : "text-green-600"
+                        : row.profit < 0
+                        ? row.isCurrentUser ? "text-red-400" : "text-red-500"
+                        : row.isCurrentUser ? "text-gray-500" : "text-gray-400"
+                    }`}>
+                      {row.profit > 0
+                        ? <TrendingUp className="size-3.5 shrink-0" />
+                        : row.profit < 0
+                        ? <TrendingDown className="size-3.5 shrink-0" />
+                        : <Minus className="size-3.5 shrink-0" />}
+                      {row.profit >= 0 ? "+" : ""}{fmt(row.profit)}
+                    </div>
+                  </td>
 
-                {/* Volume */}
-                <span className={`hidden md:block text-right tabular-nums ${row.isCurrentUser ? "text-gray-300" : "text-gray-500"}`}>
-                  {fmtCompact(row.totalVolume)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+                  {/* Trades */}
+                  <td className={`px-4 py-3.5 text-right tabular-nums hidden sm:table-cell ${row.isCurrentUser ? "text-gray-300" : "text-gray-500"}`}>
+                    {row.tradeCount}
+                  </td>
+
+                  {/* Volume */}
+                  <td className={`px-4 py-3.5 text-right tabular-nums hidden md:table-cell ${row.isCurrentUser ? "text-gray-300" : "text-gray-500"}`}>
+                    {fmtCompact(row.totalVolume)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
 
         {rows.length === 0 && (
           <p className="py-16 text-center text-sm text-gray-400">No traders yet.</p>
